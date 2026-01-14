@@ -8,22 +8,22 @@ def main():
     if model is None:
         print(f"기본 모델({model_file})을 찾을 수 없습니다. 1번 메뉴에서 모델을 로드해주세요.")
     
-    target_password = [6, 5, 4, 3]
+    target_password = [0, 0, 0, 0] # 팩토리 디폴트
 
     while True:
         print("\n" + "="*30)
-        print("1: 로드할 학습 데이타 이름")
-        print("2: 패스워드 입력")
+        print(f'1: 로드할 학습 데이타 이름: (기본값: {model_file})')
+        print(f'2: 패스워드 변경 (현재: {target_password}')
         print("3: login 프로세스 진행")
         print("0: 종료")
         print("="*30)
         
-        user_input = input("메뉴를 선택하세요: ")
+        user_input = input("메뉴를 선택하세요: ").strip() # 공백 제거
 
         if user_input == '1':
-            filename = input("학습 데이터 파일 이름 (기본값: my_first_DNN_model.keras): ")
+            filename = input(f"학습 데이터 파일 이름 (기본값: {model_file}): ")
             if not filename.strip():
-                filename = 'my_first_DNN_model.keras'
+                filename = model_file
             
             loaded_model = load_trained_model(filename)
             if loaded_model:
@@ -34,9 +34,13 @@ def main():
                 print("모델 로드 실패. 기존 모델을 유지합니다.")
 
         elif user_input == '2':
-            pw_input = input("설정할 패스워드를 공백으로 구분하여 입력하세요 (예: 1 2 3 4): ")
+            pw_input = input(f"설정할 패스워드를 공백으로 구분하여 입력하세요 \
+                             \n (예: 1 2 3 4). 현재 패스워드: {target_password} ")
             try:
-                target_password = [int(x) for x in pw_input.split()]
+                temp_password = [int(x) for x in pw_input.split()]
+                if not temp_password:
+                    raise ValueError
+                target_password = temp_password
                 print(f"패스워드가 설정되었습니다: {target_password}")
             except ValueError:
                 print("잘못된 입력입니다. 숫자를 공백으로 구분해서 입력해주세요.")

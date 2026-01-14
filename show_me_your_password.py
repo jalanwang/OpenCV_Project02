@@ -59,13 +59,14 @@ def get_password_image(cap=None):
             _, otsu_thresh = cv2.threshold(gaussian_blur, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
             
             kernel = np.ones((5, 5), np.uint8)
-            dilate = cv2.dilate(otsu_thresh, kernel, iterations=5)
-            
+            dilate = cv2.dilate(otsu_thresh, kernel, iterations=2)
+                        
             # 최종적으로 반환할 이미지 (MNIST와 유사한 형태: 흰색 숫자, 검은색 배경)
             # bitwise_not을 적용하여 배경을 검게, 숫자를 희게 만듭니다.
             # final_image = cv2.bitwise_not(dilate)
             
-            captured_image = dilate
+            captured_image = cv2.flip(dilate, 1)  # 좌우 반전 적용
+            #원본화상을 찍기 변하게 하기 위해서 좌우 반전해서 읽었기 때문임
             
             cv2.imshow("Captured Image", captured_image)
             print("이미지가 캡처되었습니다. 다른 이미지를 원하면 'c'를 다시 누르세요. 'ESC' 키로 확정하고 종료합니다.")
