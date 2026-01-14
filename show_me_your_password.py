@@ -56,17 +56,18 @@ while True:
         
         # 오츠 이진화 처리
         _, otsu_thresh = cv2.threshold(gaussian_blur, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
-        #여기서 흑백 반전 처리해 서 반전할 필요가 없다.
+        #여기서 흑백 반전 처리했다.
         cv2.imwrite("otsu_image.png", otsu_thresh)
         cv2.imshow("Otsu Image", otsu_thresh)
         
         #### Morphological Transformations ####
         # 커널 생성
         kernel = np.ones((5, 5), np.uint8)
-        erosion=cv2.erode(otsu_thresh, kernel, iterations=1) # 침식. 노이즈 제거에 도움. 반복 횟수가 커질수록 굸어짐
-        #바탕이 흰색
-        cv2.imshow("Erosion Image", erosion)
-        cv2.imwrite("digit_binary_image.png", erosion)
+        dilate=cv2.dilate(otsu_thresh, kernel, iterations=1) # 확장. 가는 글씨를 크게함. 반복 횟수가 커질수록 굵어짐
+        
+        #바탕이 검은 색
+        cv2.imshow("Dilation Image", dilate)
+        cv2.imwrite("digit_binary_image.png", dilate)
 
         #이미지 자르기
         img=cv2.imread("digit_binary_image.png", cv2.IMREAD_UNCHANGED)
