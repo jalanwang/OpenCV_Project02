@@ -2,30 +2,68 @@
 import tensorflow as tf
 from tensorflow import keras #tf.keras로 사용하기에 번거러워서 별도 임포트
 from show_me_your_password import get_password_image
+import cv2
+import numpy as np
+
+# 미리 정해진 비밀번호 (6, 5, 4, 3)
+#CORRECT_PASSWORD = [6, 5, 4, 3]
+CORRECT_PASSWORD = [6]
+
+def preprocess_image(img):
+    """
+    캡처된 이미지를 모델 입력에 맞게 전처리합니다.
+    (28x28 크기 조정, 정규화)
+    """
+    # 모델 입력은 (28, 28) 크기이므로 리사이즈합니다.
+    resized_img = cv2.resize(img, (28, 28), interpolation=cv2.INTER_AREA)
+    # 모델 입력을 위해 차원을 확장하고 (28, 28) -> (1, 28, 28, 1)
+    # 값을 0~1 사이로 정규화합니다.
+    preprocessed = resized_img.reshape(1, 28, 28, 1).astype('float32') / 255.0
+    return preprocessed
+
+def login(model):
+    """
+    4번의 이미지 입력을 받아 비밀번호와 일치하는지 확인합니다.
+    """
+    entered_password = []
+    print(f"비밀번호 {len(CORRECT_PASSWORD)}자리를 순서대로 입력하세요.")
+
+    for i in range(len(CORRECT_PASSWORD)):
+        print(f"{i+1}번째 숫자를 입력하고 'c'를 누른 후, 'ESC'키를 누르세요.")
+        captured_image = get_password_image()
+
+        if captured_image is not None:
+            # 이미지를 모델에 맞게 전처리
+            preprocessed_img = preprocess_image(captured_image)
+            
+            # 모델로 숫자 예측
+            prediction = model.predict(preprocessed_img)
+            predicted_digit = np.argmax(prediction)
+            entered_password.append(predicted_digit)
+            print(f"인식된 숫자: {predicted_digit}")
+        else:
+            print("이미지를 받아오지 못했습니다. 로그인을 다시 시도하세요.")
+            return # 함수 종료
+
+    # 비밀번호 확인
+    if entered_password == CORRECT_PASSWORD:
+        print("\n로그인 성공!")
+    else:
+        print(f"\n로그인 실패. 입력된 비밀번호: {entered_password}, 실제 비밀번호: {CORRECT_PASSWORD}")
+
 
 def main():
-    loaded =keras.models.load_model('./my_first_DNN_model.keras')
-    print(loaded.summary())
-    login()
+    try:
+        model = keras.models.load_model('./my_first_DNN_model.keras')
+        # model.summary() # 모델 구조 확인이 필요하면 주석 해제
+        login(model)
+    except Exception as e:
+        print(f"모델을 불러오는 데 실패했습니다: {e}")
+        print("my_first_DNN_model.keras 파일이 현재 디렉토리에 있는지 확인하세요.")
+
 
 if __name__ == '__main__':
     main()
 
-
-def login():
-    pass_img = []
-    captured_image = get_password_image()
-    if captured_image is not None:
-        pass_img.append(captured_image)
-        print("이미지를 성공적으로 받아왔습니다.")
-        # 저장된 이미지를 확인하고 싶다면 아래 주석을 해제하세요.
-        # import cv2
-        # cv2.imshow("Received Image", pass_img[0])
-        # cv2.waitKey(0)
-        # cv2.destroyAllWindows()
-    else:
-        print("이미지를 받아오지 못했습니다.")
-
 def signup():
     pass
-
