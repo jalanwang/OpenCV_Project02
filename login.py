@@ -7,7 +7,7 @@ import numpy as np
 
 # 미리 정해진 비밀번호 (6, 5, 4, 3)
 #CORRECT_PASSWORD = [6, 5, 4, 3]
-CORRECT_PASSWORD = [6]
+CORRECT_PASSWORD = [6,5,4,3]
 
 def preprocess_image(img):
     """
