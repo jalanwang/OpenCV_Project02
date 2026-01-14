@@ -22,20 +22,17 @@ def get_password_image():
         if not ret:
             print("프레임을 가져 올 수 없습니다.")
             break
-        
-        # 원본 프레임을 좌우 반전 없이 그대로 사용
-        display_frame = frame.copy()
-
-        height, width, _ = display_frame.shape
+                
+        height, width, _ = frame.shape
         center_x, center_y = width // 2, height // 2
         
         # ROI 설정
-        roi_start_y, roi_end_y = center_y - 150, center_y + 150
-        roi_start_x, roi_end_x = center_x - 150, center_x + 150
+        roi_start_y, roi_end_y = center_y - 140, center_y + 140
+        roi_start_x, roi_end_x = center_x - 140, center_x + 140
         
         # ROI 영역에 사각형 그리기
-        cv2.rectangle(display_frame, (roi_start_x, roi_start_y), (roi_end_x, roi_end_y), (0, 0, 255), 2)
-        cv2.imshow("Webcam - Press 'c' to capture, 'ESC' to exit", display_frame)
+        cv2.rectangle(frame, (roi_start_x, roi_start_y), (roi_end_x, roi_end_y), (0, 0, 255), 2)
+        cv2.imshow("Webcam - Press 'c' to capture, 'ESC' to exit", frame)
 
         key = cv2.waitKey(1) & 0xFF
 
@@ -50,7 +47,7 @@ def get_password_image():
             _, otsu_thresh = cv2.threshold(gaussian_blur, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
             
             kernel = np.ones((5, 5), np.uint8)
-            dilate = cv2.dilate(otsu_thresh, kernel, iterations=5)
+            dilate = cv2.dilate(otsu_thresh, kernel, iterations=1)
             
             # 최종적으로 반환할 이미지 (MNIST와 유사한 형태: 흰색 숫자, 검은색 배경)
             # bitwise_not을 적용하여 배경을 검게, 숫자를 희게 만듭니다.
