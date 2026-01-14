@@ -21,7 +21,7 @@ while True:
         break
     
     # 원본 프레임을 좌우 반전
-    flip_frame = cv2.flip(frame, 1)
+    flip_frame = frame #cv2.flip(frame, 1)
 
     height, width, _ = flip_frame.shape
     center_x = width // 2
@@ -56,6 +56,7 @@ while True:
         
         # 오츠 이진화 처리
         _, otsu_thresh = cv2.threshold(gaussian_blur, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+        #여기서 흑백 반전 처리해 서 반전할 필요가 없다.
         cv2.imwrite("otsu_image.png", otsu_thresh)
         cv2.imshow("Otsu Image", otsu_thresh)
         
