@@ -1,7 +1,7 @@
 # tensorflow 로드
 import tensorflow as tf
 from tensorflow import keras #tf.keras로 사용하기에 번거러워서 별도 임포트
-from show_me_your_password import get_password_image
+from show_me_your_password import get_password_image, init_webcam
 import cv2
 import numpy as np
 
@@ -21,16 +21,21 @@ def preprocess_image(img):
     preprocessed = resized_img.reshape(1, 28, 28, 1).astype('float32') / 255.0
     return preprocessed
 
-def login(model):
+def get_input_sequence(model, password_length=len(CORRECT_PASSWORD)):
     """
-    4번의 이미지 입력을 받아 비밀번호와 일치하는지 확인합니다.
+    웹캠을 설정하고 지정된 횟수만큼 이미지 입력을 받아 예측된 숫자 리스트를 반환합니다.
     """
-    entered_password = []
-    print(f"비밀번호 {len(CORRECT_PASSWORD)}자리를 순서대로 입력하세요.")
+    cap = init_webcam()
+    if cap is None:
+        return None
 
-    for i in range(len(CORRECT_PASSWORD)):
+    entered_password = []
+    print(f"비밀번호 {password_length}자리를 순서대로 입력하세요.")
+
+    for i in range(password_length):
         print(f"{i+1}번째 숫자를 입력하고 'c'를 누른 후, 'ESC'키를 누르세요.")
-        captured_image = get_password_image()
+        # cap 객체를 전달하여 카메라를 재사용
+        captured_image = get_password_image(cap)
 
         if captured_image is not None:
             # 이미지를 모델에 맞게 전처리
@@ -43,14 +48,35 @@ def login(model):
             print(f"인식된 숫자: {predicted_digit}")
         else:
             print("이미지를 받아오지 못했습니다. 로그인을 다시 시도하세요.")
-            return # 함수 종료
+            cap.release()
+            cv2.destroyAllWindows()
+            return None
 
+    cap.release()
+    cv2.destroyAllWindows()
+    return entered_password
+
+def check_password(entered_password, correct_password=CORRECT_PASSWORD):
+    """
+    입력된 비밀번호가 맞는지 확인합니다.
+    """
     # 비밀번호 확인
-    if entered_password == CORRECT_PASSWORD:
+    if entered_password == correct_password:
         print("\n로그인 성공!")
     else:
-        print(f"\n로그인 실패. 입력된 비밀번호: {entered_password}, 실제 비밀번호: {CORRECT_PASSWORD}")
+        print(f"\n로그인 실패. 입력된 비밀번호: {entered_password}, 실제 비밀번호: {correct_password}")
 
+def login(model, correct_password=CORRECT_PASSWORD):
+    entered_password = get_input_sequence(model, len(correct_password))
+    if entered_password is not None:
+        check_password(entered_password, correct_password)
+
+def load_trained_model(model_path):
+    try:
+        return keras.models.load_model(model_path)
+    except Exception as e:
+        print(f"모델 로드 에러: {e}")
+        return None
 
 def main():
     try:

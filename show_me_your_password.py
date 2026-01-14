@@ -1,19 +1,27 @@
 import cv2
 import numpy as np
 
-def get_password_image():
-    """
-    웹캠을 열고 'c' 키를 누르면 관심 영역(ROI)의 이미지를 캡처, 처리하여 반환합니다.
-    'ESC' 키를 누르면 종료됩니다.
-    """
+def init_webcam():
     cap = cv2.VideoCapture(0)
     if not cap.isOpened():
         print("비디오 캡처 장치를 열 수 없습니다.")
         return None
-
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
     cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
+    return cap
+
+def get_password_image(cap=None):
+    """
+    웹캠을 열고 'c' 키를 누르면 관심 영역(ROI)의 이미지를 캡처, 처리하여 반환합니다.
+    'ESC' 키를 누르면 종료됩니다.
+    cap 인자가 주어지면 해당 비디오 캡처 객체를 사용합니다.
+    """
+    own_cap = False
+    if cap is None:
+        cap = init_webcam()
+        own_cap = True
+        if cap is None: return None
 
     captured_image = None
 
@@ -23,15 +31,16 @@ def get_password_image():
             print("프레임을 가져 올 수 없습니다.")
             break
         
-        # 원본 프레임을 좌우 반전 없이 그대로 사용
+        # 원본 프레임을 좌우 반전
+        frame = cv2.flip(frame, 1)
         display_frame = frame.copy()
 
         height, width, _ = display_frame.shape
         center_x, center_y = width // 2, height // 2
         
         # ROI 설정
-        roi_start_y, roi_end_y = center_y - 150, center_y + 150
-        roi_start_x, roi_end_x = center_x - 150, center_x + 150
+        roi_start_y, roi_end_y = center_y - 84, center_y + 84
+        roi_start_x, roi_end_x = center_x - 84, center_x + 84
         
         # ROI 영역에 사각형 그리기
         cv2.rectangle(display_frame, (roi_start_x, roi_start_y), (roi_end_x, roi_end_y), (0, 0, 255), 2)
@@ -64,8 +73,9 @@ def get_password_image():
         elif key == 27:  # ESC 키
             break
 
-    cap.release()
-    cv2.destroyAllWindows()
+    if own_cap:
+        cap.release()
+        cv2.destroyAllWindows()
     return captured_image
 
 if __name__ == '__main__':
