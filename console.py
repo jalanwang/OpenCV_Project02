@@ -15,6 +15,7 @@ def main():
         print(f'1: 로드할 학습 데이타 이름: (기본값: {model_file})')
         print(f'2: 패스워드 변경 (현재: {target_password}')
         print("3: login 프로세스 진행")
+        print("4: 개선된 로그인 프로세스 진행")
         print("0: 종료")
         print("="*30)
         
@@ -48,6 +49,13 @@ def main():
         elif user_input == '3':
             if model:
                 print(f"로그인 프로세스를 시작합니다. (설정된 비밀번호: {target_password})")
+                login(model, target_password)
+            else:
+                print("모델이 로드되지 않았습니다. 1번 메뉴를 이용해주세요.")
+
+        elif user_input == '4':
+            if model:
+                print(f"개선된 로그인 프로세스를 시작합니다. (설정된 비밀번호: {target_password})")
                 login(model, target_password)
             else:
                 print("모델이 로드되지 않았습니다. 1번 메뉴를 이용해주세요.")
