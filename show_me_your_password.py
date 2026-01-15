@@ -11,11 +11,12 @@ def init_webcam():
     cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
     return cap
 
-def get_password_image(cap=None):
+def get_password_image(cap=None, index=0):
     """
     웹캠을 열고 'c' 키를 누르면 관심 영역(ROI)의 이미지를 캡처, 처리하여 반환합니다.
     'ESC' 키를 누르면 종료됩니다.
     cap 인자가 주어지면 해당 비디오 캡처 객체를 사용합니다.
+    index 인자는 저장될 파일명의 접미사로 사용됩니다.
     """
     own_cap = False
     if cap is None:
@@ -59,17 +60,50 @@ def get_password_image(cap=None):
             _, otsu_thresh = cv2.threshold(gaussian_blur, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
             
             kernel = np.ones((5, 5), np.uint8)
-            dilate = cv2.dilate(otsu_thresh, kernel, iterations=2)
+            #dilate = cv2.dilate(otsu_thresh, kernel, iterations=1)
+            #erosion = cv2.erode(otsu_thresh, kernel, iterations=1)
                         
             # 최종적으로 반환할 이미지 (MNIST와 유사한 형태: 흰색 숫자, 검은색 배경)
             # bitwise_not을 적용하여 배경을 검게, 숫자를 희게 만듭니다.
             # final_image = cv2.bitwise_not(dilate)
+            # otsu_thresh 자체가 이미 반전된 상태이므로 추가 반전 불필요
             
-            captured_image = cv2.flip(dilate, 1)  # 좌우 반전 적용
+            #captured_image = cv2.flip(erosion, 1)  # 좌우 반전 적용
+            captured_image = otsu_thresh
+
             #원본화상을 찍기 변하게 하기 위해서 좌우 반전해서 읽었기 때문임
+            captured_image = cv2.flip(captured_image, 1)  # 좌우 반전 적용
             
-            cv2.imshow("Captured Image", captured_image)
-            print("이미지가 캡처되었습니다. 다른 이미지를 원하면 'c'를 다시 누르세요. 'ESC' 키로 확정하고 종료합니다.")
+            # 바운딩 박스 계산 및 이미지 자르기
+            contours, _ = cv2.findContours(captured_image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            if contours:
+                c = max(contours, key=cv2.contourArea)
+                x, y, w, h = cv2.boundingRect(c)
+                
+                padding = 20
+                x = x - padding
+                y = y - padding
+                w = w + (padding * 2)
+                h = h + (padding * 2)
+
+                # 정사각형으로 보정
+                center_x = x + w // 2
+                center_y = y + h // 2
+                max_side = max(w, h)
+                w = max_side
+                h = max_side
+                x = center_x - (w // 2)
+                y = center_y - (h // 2)
+
+                # 이미지 범위 벗어나는 것 방지 (음수 인덱스 방지)
+                if x < 0: x = 0
+                if y < 0: y = 0
+                
+                # 이미지 자르기
+                captured_image = captured_image[y:y+h, x:x+w]
+
+            print("이미지가 캡처되었습니다.")
+            break
 
         elif key == 27:  # ESC 키
             break
@@ -77,13 +111,23 @@ def get_password_image(cap=None):
     if own_cap:
         cap.release()
         cv2.destroyAllWindows()
-    return captured_image
+    
+    if captured_image is not None:
+        filename = f"captured_password_image_{index}.png"
+        cv2.imwrite(filename, captured_image)
+        return [filename]
+    return None
 
 if __name__ == '__main__':
     # 이 파일을 직접 실행할 경우 테스트 코드
-    password_img = get_password_image()
-    if password_img is not None:
-        cv2.imwrite("captured_password_image.png", password_img)
-        print("캡처된 이미지를 'captured_password_image.png' 파일로 저장했습니다.")
+    result = get_password_image()
+    if result is not None:
+        filename = result[0]
+        password_img = cv2.imread(filename, cv2.IMREAD_GRAYSCALE)
+        cv2.imshow("Final Bounded Image", password_img)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+
+        print(f"캡처된 이미지를 '{filename}' 파일로 저장했습니다.")
     else:
         print("이미지가 캡처되지 않았습니다.")

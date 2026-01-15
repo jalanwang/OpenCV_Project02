@@ -8,7 +8,7 @@ def main():
     if model is None:
         print(f"기본 모델({model_file})을 찾을 수 없습니다. 1번 메뉴에서 모델을 로드해주세요.")
     
-    target_password = [0, 0, 0, 0] # 팩토리 디폴트
+    target_password = [6] # 팩토리 디폴트
 
     while True:
         print("\n" + "="*30)

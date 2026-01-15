@@ -5,9 +5,8 @@ from show_me_your_password import get_password_image, init_webcam
 import cv2
 import numpy as np
 
-# 미리 정해진 비밀번호 (6, 5, 4, 3)
-#CORRECT_PASSWORD = [6, 5, 4, 3]
-CORRECT_PASSWORD = [6,5,4,3]
+# 테스트 번호/ 잘 안되는 번호를 채택. 이건 단독으로 실행할 때 사용
+CORRECT_PASSWORD = [6,6]
 
 def preprocess_image(img):
     """
@@ -33,11 +32,13 @@ def get_input_sequence(model, password_length=len(CORRECT_PASSWORD)):
     print(f"비밀번호 {password_length}자리를 순서대로 입력하세요.")
 
     for i in range(password_length):
-        print(f"{i+1}번째 숫자를 입력하고 'c'를 누른 후, 'ESC'키를 누르세요.")
+        print(f"{i+1}번째 숫자를 보여주고 'c'를 누르세요.")
         # cap 객체를 전달하여 카메라를 재사용
-        captured_image = get_password_image(cap)
+        result = get_password_image(cap, index=i)
 
-        if captured_image is not None:
+        if result is not None:
+            filename = result[0]
+            captured_image = cv2.imread(filename, cv2.IMREAD_GRAYSCALE)
             # 이미지를 모델에 맞게 전처리
             preprocessed_img = preprocess_image(captured_image)
             
@@ -63,8 +64,13 @@ def check_password(entered_password, correct_password=CORRECT_PASSWORD):
     # 비밀번호 확인
     if entered_password == correct_password:
         print("\n로그인 성공!")
+        print('='*30)
+        print(f'Hello Supervisor!')
+        print('Welcome to the secure system.')
+        print('='*30)
+        
     else:
-        print(f"\n로그인 실패. 입력된 비밀번호: {entered_password}, 실제 비밀번호: {correct_password}")
+        print(f"\n로그인 실패. 입력된 비밀번호: {entered_password}")
 
 def login(model, correct_password=CORRECT_PASSWORD):
     entered_password = get_input_sequence(model, len(correct_password))
