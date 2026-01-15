@@ -137,6 +137,7 @@ def get_password_image2(cap=None, index=0):
     captured_image = None
     frame_count = 0
     prev_gray_roi = None
+    detecting = False
 
     while True:
         ret, frame = cap.read()
@@ -159,6 +160,12 @@ def get_password_image2(cap=None, index=0):
         
         # ROI 영역에 사각형 그리기
         cv2.rectangle(display_frame, (roi_start_x, roi_start_y), (roi_end_x, roi_end_y), (0, 0, 255), 2)
+        
+        if detecting:
+            cv2.putText(display_frame, "Detecting...", (roi_start_x, roi_start_y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
+        else:
+            cv2.putText(display_frame, "Press Space to Detect", (roi_start_x, roi_start_y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 1)
+            
         cv2.imshow("Webcam - Auto Capture Mode", display_frame)
 
         # ROI 추출 및 변화 감지
@@ -176,7 +183,7 @@ def get_password_image2(cap=None, index=0):
         frame_count += 1
         
         # 14프레임마다 검사하며, 이미지 변화가 10% 미만일 때만 진행
-        if frame_count % 14 == 0 and change_ratio < 0.1:
+        if detecting and frame_count % 14 == 0 and change_ratio < 0.5: 
             # 이미지 처리
             gaussian_blur = cv2.GaussianBlur(gray_roi, (5, 5), 0)
             _, otsu_thresh = cv2.threshold(gaussian_blur, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
@@ -190,8 +197,8 @@ def get_password_image2(cap=None, index=0):
                 c = max(contours, key=cv2.contourArea)
                 x, y, w, h = cv2.boundingRect(c)
                 
-                # 면적 비율 확인 (80% 이상)
-                if (w * h) >= (roi_area * 0.8):
+                # 면적 비율 확인 (50% 이상)
+                if (w * h) >= (roi_area * 0.5):
                     padding = 20
                     x = x - padding
                     y = y - padding
@@ -222,15 +229,16 @@ def get_password_image2(cap=None, index=0):
                         cv2.destroyWindow("Detected Candidate - Press 'c' to confirm")
                         break
                     elif k == 27: # ESC
-                        if own_cap: cap.release()
-                        cv2.destroyAllWindows()
-                        return None
+                        cv2.destroyWindow("Detected Candidate - Press 'c' to confirm")
+                        detecting = False
                     else:
                         cv2.destroyWindow("Detected Candidate - Press 'c' to confirm")
 
         key = cv2.waitKey(1) & 0xFF
         if key == 27:  # ESC 키
             break
+        elif key == 32: # Space Key
+            detecting = True
 
     if own_cap:
         cap.release()

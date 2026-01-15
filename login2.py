@@ -37,7 +37,7 @@ def get_input_sequence(model, password_length=len(CORRECT_PASSWORD)):
     for i in range(password_length):
         print(f"{i+1}번째 숫자를 보여주고 'c'를 누르세요.")
         # cap 객체를 전달하여 카메라를 재사용
-        result = get_password_image(cap, index=i)
+        result = get_password_image2(cap, index=i)
 
         if result is not None:
             filename = result[0]

@@ -37,7 +37,7 @@ def main():
         elif user_input == '2':
             pw_input = input(f"설정할 패스워드를 공백으로 구분하여 입력하세요 \
                              \n (예: 1 2 3 4). 현재 패스워드: {target_password} ")
-            try:
+            try:            
                 temp_password = [int(x) for x in pw_input.split()]
                 if not temp_password:
                     raise ValueError
