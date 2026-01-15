@@ -64,5 +64,11 @@ def main():
             print("종료합니다.")
             break
 
+        elif not user_input:
+            continue
+
+        else:
+            print("잘못된 입력입니다. 다시 입력해주세요.")
+
 if __name__ == "__main__":
     main()

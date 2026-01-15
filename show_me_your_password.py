@@ -158,6 +158,20 @@ def get_password_image2(cap=None, index=0):
         roi_start_x, roi_end_x = center_x - roi_half, center_x + roi_half
         roi_area = (roi_end_x - roi_start_x) * (roi_end_y - roi_start_y)
         
+        # ROI 추출
+        roi = frame[roi_start_y:roi_end_y, roi_start_x:roi_end_x]
+        gray_roi = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
+
+        # 실시간 바운딩 박스 표시
+        gaussian_blur = cv2.GaussianBlur(gray_roi, (5, 5), 0)
+        _, otsu_thresh = cv2.threshold(gaussian_blur, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+        
+        contours, _ = cv2.findContours(otsu_thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        if contours:
+            c = max(contours, key=cv2.contourArea)
+            x, y, w, h = cv2.boundingRect(c)
+            cv2.rectangle(display_frame, (roi_start_x + x, roi_start_y + y), (roi_start_x + x + w, roi_start_y + y + h), (255, 0, 0), 1)
+
         # ROI 영역에 사각형 그리기
         cv2.rectangle(display_frame, (roi_start_x, roi_start_y), (roi_end_x, roi_end_y), (0, 0, 255), 2)
         
@@ -168,10 +182,6 @@ def get_password_image2(cap=None, index=0):
             
         cv2.imshow("Webcam - Auto Capture Mode", display_frame)
 
-        # ROI 추출 및 변화 감지
-        roi = frame[roi_start_y:roi_end_y, roi_start_x:roi_end_x]
-        gray_roi = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
-        
         change_ratio = 1.0
         if prev_gray_roi is not None:
             diff = cv2.absdiff(prev_gray_roi, gray_roi)
@@ -182,11 +192,8 @@ def get_password_image2(cap=None, index=0):
 
         frame_count += 1
         
-        # 14프레임마다 검사하며, 이미지 변화가 10% 미만일 때만 진행
-        if detecting and frame_count % 14 == 0 and change_ratio < 0.5: 
-            # 이미지 처리
-            gaussian_blur = cv2.GaussianBlur(gray_roi, (5, 5), 0)
-            _, otsu_thresh = cv2.threshold(gaussian_blur, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+        # 매 프레임마다 검사하며, 이미지 변화가 0.1 이내일 때만 진행
+        if detecting and change_ratio < 0.2: 
             
             # 원본화상을 찍기 변하게 하기 위해서 좌우 반전해서 읽었기 때문임
             temp_image = cv2.flip(otsu_thresh, 1)
@@ -198,7 +205,7 @@ def get_password_image2(cap=None, index=0):
                 x, y, w, h = cv2.boundingRect(c)
                 
                 # 면적 비율 확인 (50% 이상)
-                if (w * h) >= (roi_area * 0.5):
+                if (w * h) >= (roi_area * 0.3):
                     padding = 20
                     x = x - padding
                     y = y - padding
@@ -218,14 +225,15 @@ def get_password_image2(cap=None, index=0):
                     if x < 0: x = 0
                     if y < 0: y = 0
                     
-                    # 이미지 자르기
-                    candidate_img = temp_image[y:y+h, x:x+w]
+                    # 확인용 이미지 생성 (바운딩 박스 그리기)
+                    preview_img = cv2.cvtColor(temp_image, cv2.COLOR_GRAY2BGR)
+                    cv2.rectangle(preview_img, (x, y), (x+w, y+h), (0, 255, 0), 1)
                     
-                    cv2.imshow("Detected Candidate - Press 'c' to confirm", candidate_img)
+                    cv2.imshow("Detected Candidate - Press 'c' to confirm", preview_img)
                     
                     k = cv2.waitKey(0) & 0xFF
                     if k == ord('c') or k == ord('C'):
-                        captured_image = candidate_img
+                        captured_image = temp_image[y:y+h, x:x+w]
                         cv2.destroyWindow("Detected Candidate - Press 'c' to confirm")
                         break
                     elif k == 27: # ESC
