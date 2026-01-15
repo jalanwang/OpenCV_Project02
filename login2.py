@@ -4,7 +4,7 @@
 # tensorflow 로드
 import tensorflow as tf
 from tensorflow import keras #tf.keras로 사용하기에 번거러워서 별도 임포트
-from show_me_your_password import get_password_image, init_webcam
+from show_me_your_password import get_password_image2, init_webcam
 import cv2
 import numpy as np
 

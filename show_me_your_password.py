@@ -136,6 +136,7 @@ def get_password_image2(cap=None, index=0):
 
     captured_image = None
     frame_count = 0
+    prev_gray_roi = None
 
     while True:
         ret, frame = cap.read()
@@ -160,16 +161,24 @@ def get_password_image2(cap=None, index=0):
         cv2.rectangle(display_frame, (roi_start_x, roi_start_y), (roi_end_x, roi_end_y), (0, 0, 255), 2)
         cv2.imshow("Webcam - Auto Capture Mode", display_frame)
 
+        # ROI 추출 및 변화 감지
+        roi = frame[roi_start_y:roi_end_y, roi_start_x:roi_end_x]
+        gray_roi = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
+        
+        change_ratio = 1.0
+        if prev_gray_roi is not None:
+            diff = cv2.absdiff(prev_gray_roi, gray_roi)
+            _, diff_thresh = cv2.threshold(diff, 25, 255, cv2.THRESH_BINARY)
+            change_ratio = cv2.countNonZero(diff_thresh) / roi_area
+            
+        prev_gray_roi = gray_roi
+
         frame_count += 1
         
-        # 14프레임마다 검사
-        if frame_count % 14 == 0:
-            # ROI 추출
-            roi = frame[roi_start_y:roi_end_y, roi_start_x:roi_end_x]
-            
+        # 14프레임마다 검사하며, 이미지 변화가 10% 미만일 때만 진행
+        if frame_count % 14 == 0 and change_ratio < 0.1:
             # 이미지 처리
-            gray_image = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
-            gaussian_blur = cv2.GaussianBlur(gray_image, (5, 5), 0)
+            gaussian_blur = cv2.GaussianBlur(gray_roi, (5, 5), 0)
             _, otsu_thresh = cv2.threshold(gaussian_blur, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
             
             # 원본화상을 찍기 변하게 하기 위해서 좌우 반전해서 읽었기 때문임
