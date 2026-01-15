@@ -1,7 +1,7 @@
 # tensorflow 로드
 import tensorflow as tf
 from tensorflow import keras #tf.keras로 사용하기에 번거러워서 별도 임포트
-from show_me_your_password import get_password_image, init_webcam
+from show_me_your_password import get_password_image, get_password_image2, init_webcam
 import cv2
 import numpy as np
 
@@ -57,6 +57,44 @@ def get_input_sequence(model, password_length=len(CORRECT_PASSWORD)):
     cv2.destroyAllWindows()
     return entered_password
 
+def get_input_sequence2(model, password_length=len(CORRECT_PASSWORD)):
+    """
+    웹캠을 설정하고 지정된 횟수만큼 이미지 입력을 받아 예측된 숫자 리스트를 반환합니다.
+    (자동 캡처 모드 사용)
+    """
+    cap = init_webcam()
+    if cap is None:
+        return None
+
+    entered_password = []
+    print(f"비밀번호 {password_length}자리를 순서대로 입력하세요. (자동 캡처 모드)")
+
+    for i in range(password_length):
+        print(f"{i+1}번째 숫자를 화면 사각형 안에 맞춰주세요.")
+        # cap 객체를 전달하여 카메라를 재사용
+        result = get_password_image2(cap, index=i)
+
+        if result is not None:
+            filename = result[0]
+            captured_image = cv2.imread(filename, cv2.IMREAD_GRAYSCALE)
+            # 이미지를 모델에 맞게 전처리
+            preprocessed_img = preprocess_image(captured_image)
+            
+            # 모델로 숫자 예측
+            prediction = model.predict(preprocessed_img)
+            predicted_digit = np.argmax(prediction)
+            entered_password.append(predicted_digit)
+            print(f"인식된 숫자: {predicted_digit}")
+        else:
+            print("이미지를 받아오지 못했습니다. 로그인을 다시 시도하세요.")
+            cap.release()
+            cv2.destroyAllWindows()
+            return None
+
+    cap.release()
+    cv2.destroyAllWindows()
+    return entered_password
+
 def check_password(entered_password, correct_password=CORRECT_PASSWORD):
     """
     입력된 비밀번호가 맞는지 확인합니다.
@@ -74,6 +112,11 @@ def check_password(entered_password, correct_password=CORRECT_PASSWORD):
 
 def login(model, correct_password=CORRECT_PASSWORD):
     entered_password = get_input_sequence(model, len(correct_password))
+    if entered_password is not None:
+        check_password(entered_password, correct_password)
+
+def login2(model, correct_password=CORRECT_PASSWORD):
+    entered_password = get_input_sequence2(model, len(correct_password))
     if entered_password is not None:
         check_password(entered_password, correct_password)
 

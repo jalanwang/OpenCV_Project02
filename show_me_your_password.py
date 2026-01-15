@@ -118,6 +118,121 @@ def get_password_image(cap=None, index=0):
         return [filename]
     return None
 
+
+def get_password_image2(cap=None, index=0):
+    """
+    웹캠을 열고 화면의 사각영역안에 숫자가 나타난다.
+    숫자의 이미지를 매 14프레임마다 캡처한 후, 바운딩 박스 내부 면적의 크기가 사각 영역 면적의 80% 이상의 영역을 차지하면
+    이미지를 보여주고 'c' 키를 누르면 이 이미지를 반환한다.
+    'ESC' 키를 누르면 종료됩니다.    
+    cap 인자가 주어지면 해당 비디오 캡처 객체를 사용합니다.
+    index 인자는 저장될 파일명의 접미사로 사용됩니다.
+    """
+    own_cap = False
+    if cap is None:
+        cap = init_webcam()
+        own_cap = True
+        if cap is None: return None
+
+    captured_image = None
+    frame_count = 0
+
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            print("프레임을 가져 올 수 없습니다.")
+            break
+        
+        # 원본 프레임을 좌우 반전
+        frame = cv2.flip(frame, 1)
+        display_frame = frame.copy()
+
+        height, width, _ = display_frame.shape
+        center_x, center_y = width // 2, height // 2
+        
+        # ROI 설정
+        roi_half = 84
+        roi_start_y, roi_end_y = center_y - roi_half, center_y + roi_half
+        roi_start_x, roi_end_x = center_x - roi_half, center_x + roi_half
+        roi_area = (roi_end_x - roi_start_x) * (roi_end_y - roi_start_y)
+        
+        # ROI 영역에 사각형 그리기
+        cv2.rectangle(display_frame, (roi_start_x, roi_start_y), (roi_end_x, roi_end_y), (0, 0, 255), 2)
+        cv2.imshow("Webcam - Auto Capture Mode", display_frame)
+
+        frame_count += 1
+        
+        # 14프레임마다 검사
+        if frame_count % 14 == 0:
+            # ROI 추출
+            roi = frame[roi_start_y:roi_end_y, roi_start_x:roi_end_x]
+            
+            # 이미지 처리
+            gray_image = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
+            gaussian_blur = cv2.GaussianBlur(gray_image, (5, 5), 0)
+            _, otsu_thresh = cv2.threshold(gaussian_blur, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+            
+            # 원본화상을 찍기 변하게 하기 위해서 좌우 반전해서 읽었기 때문임
+            temp_image = cv2.flip(otsu_thresh, 1)
+
+            # 바운딩 박스 계산
+            contours, _ = cv2.findContours(temp_image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            if contours:
+                c = max(contours, key=cv2.contourArea)
+                x, y, w, h = cv2.boundingRect(c)
+                
+                # 면적 비율 확인 (80% 이상)
+                if (w * h) >= (roi_area * 0.8):
+                    padding = 20
+                    x = x - padding
+                    y = y - padding
+                    w = w + (padding * 2)
+                    h = h + (padding * 2)
+
+                    # 정사각형으로 보정
+                    center_x_box = x + w // 2
+                    center_y_box = y + h // 2
+                    max_side = max(w, h)
+                    w = max_side
+                    h = max_side
+                    x = center_x_box - (w // 2)
+                    y = center_y_box - (h // 2)
+
+                    # 이미지 범위 벗어나는 것 방지
+                    if x < 0: x = 0
+                    if y < 0: y = 0
+                    
+                    # 이미지 자르기
+                    candidate_img = temp_image[y:y+h, x:x+w]
+                    
+                    cv2.imshow("Detected Candidate - Press 'c' to confirm", candidate_img)
+                    
+                    k = cv2.waitKey(0) & 0xFF
+                    if k == ord('c') or k == ord('C'):
+                        captured_image = candidate_img
+                        cv2.destroyWindow("Detected Candidate - Press 'c' to confirm")
+                        break
+                    elif k == 27: # ESC
+                        if own_cap: cap.release()
+                        cv2.destroyAllWindows()
+                        return None
+                    else:
+                        cv2.destroyWindow("Detected Candidate - Press 'c' to confirm")
+
+        key = cv2.waitKey(1) & 0xFF
+        if key == 27:  # ESC 키
+            break
+
+    if own_cap:
+        cap.release()
+        cv2.destroyAllWindows()
+    
+    if captured_image is not None:
+        filename = f"captured_password_image_{index}.png"
+        cv2.imwrite(filename, captured_image)
+        return [filename]
+    return None
+
 if __name__ == '__main__':
     # 이 파일을 직접 실행할 경우 테스트 코드
     result = get_password_image()

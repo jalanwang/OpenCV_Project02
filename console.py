@@ -1,5 +1,5 @@
 import sys
-from login import login, load_trained_model
+from login import login, login2, load_trained_model
 
 def main():
     # 초기 설정
@@ -56,7 +56,7 @@ def main():
         elif user_input == '4':
             if model:
                 print(f"개선된 로그인 프로세스를 시작합니다. (설정된 비밀번호: {target_password})")
-                login(model, target_password)
+                login2(model, target_password)
             else:
                 print("모델이 로드되지 않았습니다. 1번 메뉴를 이용해주세요.")
 
