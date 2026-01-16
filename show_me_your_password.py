@@ -95,12 +95,23 @@ def get_password_image(cap=None, index=0):
                 x = center_x - (w // 2)
                 y = center_y - (h // 2)
 
-                # 이미지 범위 벗어나는 것 방지 (음수 인덱스 방지)
-                if x < 0: x = 0
-                if y < 0: y = 0
+                # 이미지 자르기 (이미지 범위를 벗어나도 검은색으로 패딩하여 중앙 정렬 유지)
+                square_image = np.zeros((h, w), dtype=np.uint8)
                 
-                # 이미지 자르기
-                captured_image = captured_image[y:y+h, x:x+w]
+                src_y_start = max(0, y)
+                src_y_end = min(captured_image.shape[0], y + h)
+                src_x_start = max(0, x)
+                src_x_end = min(captured_image.shape[1], x + w)
+                
+                dst_y_start = max(0, -y)
+                dst_x_start = max(0, -x)
+                
+                if src_y_end > src_y_start and src_x_end > src_x_start:
+                    square_image[dst_y_start:dst_y_start + (src_y_end - src_y_start), 
+                                 dst_x_start:dst_x_start + (src_x_end - src_x_start)] = \
+                        captured_image[src_y_start:src_y_end, src_x_start:src_x_end]
+                
+                captured_image = square_image
 
             print("이미지가 캡처되었습니다.")
             break
@@ -221,10 +232,6 @@ def get_password_image2(cap=None, index=0):
                     x = center_x_box - (w // 2)
                     y = center_y_box - (h // 2)
 
-                    # 이미지 범위 벗어나는 것 방지
-                    if x < 0: x = 0
-                    if y < 0: y = 0
-                    
                     # 확인용 이미지 생성 (바운딩 박스 그리기)
                     preview_img = cv2.cvtColor(temp_image, cv2.COLOR_GRAY2BGR)
                     cv2.rectangle(preview_img, (x, y), (x+w, y+h), (0, 255, 0), 1)
@@ -233,7 +240,23 @@ def get_password_image2(cap=None, index=0):
                     
                     k = cv2.waitKey(0) & 0xFF
                     if k == ord('c') or k == ord('C'):
-                        captured_image = temp_image[y:y+h, x:x+w]
+                        # 이미지 자르기 (이미지 범위를 벗어나도 검은색으로 패딩하여 중앙 정렬 유지)
+                        square_image = np.zeros((h, w), dtype=np.uint8)
+                        
+                        src_y_start = max(0, y)
+                        src_y_end = min(temp_image.shape[0], y + h)
+                        src_x_start = max(0, x)
+                        src_x_end = min(temp_image.shape[1], x + w)
+                        
+                        dst_y_start = max(0, -y)
+                        dst_x_start = max(0, -x)
+                        
+                        if src_y_end > src_y_start and src_x_end > src_x_start:
+                            square_image[dst_y_start:dst_y_start + (src_y_end - src_y_start), 
+                                         dst_x_start:dst_x_start + (src_x_end - src_x_start)] = \
+                                temp_image[src_y_start:src_y_end, src_x_start:src_x_end]
+
+                        captured_image = square_image
                         cv2.destroyWindow("Detected Candidate - Press 'c' to confirm")
                         break
                     elif k == 27: # ESC
