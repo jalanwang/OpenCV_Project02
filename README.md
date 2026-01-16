@@ -14,16 +14,18 @@
 ![인식 성공](./image.png)
 
 ![인식된 사진1](./captured_password_image_0.png)
-![인식된 사진1](./captured_password_image_1.png)
-![인식된 사진1](./captured_password_image_2.png)
-![인식된 사진1](./captured_password_image_3.png)
+![인식된 사진2](./captured_password_image_1.png)
+![인식된 사진3](./captured_password_image_2.png)
+![인식된 사진4](./captured_password_image_3.png)
 --------------------------
 
 ## 파일 및 관련 문서 ##
 
 [다운로드](https://github.com/jalanwang/OpenCV_Project02/tree/auto_read2) (Linux)
 
-[Documentation](https://coffeecrawlers.com/?p=2176)
+[개발 줄거리](https://coffeecrawlers.com/?p=2176)
+
+[발표 자료](https://docs.google.com/presentation/d/1O1eV30sE_yvFdGf-2JSo2zs8kUxJ350yqFcQG4SBz8s/edit?usp=sharing)
 
 [LICENSE](https://www.olis.or.kr/license/Detailselect.do?lId=1002): Apache2
 
